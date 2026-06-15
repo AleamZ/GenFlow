@@ -14,9 +14,12 @@ import { IssuesPanel } from "./components/IssuesPanel";
 import { useGraphStore } from "./store/useGraphStore";
 import { exportPNG, exportSVG } from "./lib/exportImage";
 import type { VizGraph } from "./lib/deriveGraph";
+import { APP_VERSION, bridge, isDesktop } from "./platform";
 
 export default function App() {
   const loadGraph = useGraphStore((s) => s.loadGraph);
+  const applyLiveGraph = useGraphStore((s) => s.applyLiveGraph);
+  const setAnalyzing = useGraphStore((s) => s.setAnalyzing);
   const graph = useGraphStore((s) => s.graph);
   const selectedId = useGraphStore((s) => s.selectedId);
   const loading = useGraphStore((s) => s.loading);
@@ -25,8 +28,19 @@ export default function App() {
   const vizRef = useRef<VizGraph | null>(null);
 
   useEffect(() => {
-    loadGraph({}, "sample-project");
-  }, [loadGraph]);
+    if (!isDesktop || !bridge) {
+      // Web/Render: auto-load the bundled sample via the HTTP API.
+      loadGraph({}, "sample-project");
+      return;
+    }
+    // Desktop: wait for the user to open a folder; subscribe to live updates.
+    const offGraph = bridge.onGraphUpdate((g) => applyLiveGraph(g));
+    const offStatus = bridge.onStatus((s) => setAnalyzing(s.state === "analyzing"));
+    return () => {
+      offGraph();
+      offStatus();
+    };
+  }, [loadGraph, applyLiveGraph, setAnalyzing]);
 
   const onExportPNG = useCallback(() => exportPNG(canvasRef.current, "genflow-graph.png"), []);
   const onExportSVG = useCallback(() => {
@@ -43,8 +57,15 @@ export default function App() {
                 <Workflow size={18} className="text-white" />
               </div>
               <div>
-                <h1 className="text-sm font-bold leading-none">GenFlow</h1>
-                <p className="text-[10px] text-muted">Code Dependency Visualizer</p>
+                <h1 className="flex items-center gap-1.5 text-sm font-bold leading-none">
+                  GenFlow
+                  <span className="rounded bg-panel2 px-1 py-0.5 text-[9px] font-medium text-muted">
+                    v{APP_VERSION}
+                  </span>
+                </h1>
+                <p className="text-[10px] text-muted">
+                  Code Dependency Visualizer{isDesktop ? " · Desktop" : ""}
+                </p>
               </div>
             </div>
             <SourceLoader />
@@ -106,7 +127,11 @@ function EmptyState({ loading }: { loading: boolean }) {
       ) : (
         <div>
           <p className="text-sm">No graph loaded.</p>
-          <p className="mt-1 text-xs">Enter a local path, upload a zip, or click “Sample”.</p>
+          <p className="mt-1 text-xs">
+            {isDesktop
+              ? "Click “Open folder” to analyze a project — it re-analyzes live as you edit."
+              : "Enter a local path, upload a zip, or click “Sample”."}
+          </p>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { scanProject } from "./scan.js";
-import { createProjectContext } from "./project.js";
+import { createProjectContext, type ProjectContext } from "./project.js";
 import { buildFileGraph } from "./fileGraph.js";
 import { buildCallGraph } from "./callGraph.js";
 import { classifyFile, looksLikeEntrypoint } from "./classify.js";
@@ -48,9 +48,6 @@ function readPackageEntrypoints(root: string, internalIds: Set<string>): Set<str
 
 /** Analyze a project directory and produce the canonical graph JSON. */
 export function analyzeProject(options: AnalyzeOptions): GraphJSON {
-  const start = Date.now();
-  const root = toPosix(path.resolve(options.root));
-
   if (!fs.existsSync(options.root) || !fs.statSync(options.root).isDirectory()) {
     throw new Error(`Not a directory: ${options.root}`);
   }
@@ -61,6 +58,17 @@ export function analyzeProject(options: AnalyzeOptions): GraphJSON {
   });
 
   const ctx = createProjectContext(options.root, files);
+  return buildGraphFromContext(ctx, options);
+}
+
+/**
+ * Build the graph JSON from an already-prepared project context.
+ * Reused by the incremental analyzer so the ts-morph Project (and its parse cache)
+ * survives across re-analyses while watching for file changes.
+ */
+export function buildGraphFromContext(ctx: ProjectContext, options: AnalyzeOptions): GraphJSON {
+  const start = Date.now();
+  const root = toPosix(path.resolve(ctx.root));
   const { edges, internalFiles, externalUsage } = buildFileGraph(ctx);
 
   const internalIds = new Set(internalFiles.map((f) => f.rel));

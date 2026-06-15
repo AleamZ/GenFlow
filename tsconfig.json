@@ -1,8 +1,0 @@
-{
-  // Solution-style root config: a root-level `tsc` / `tsc --noEmit` compiles NOTHING.
-  // Each workspace is type-checked by its own tsconfig (analyzer/, web/).
-  // This prevents deploy platforms from type-checking sample-project/ (demo fixtures
-  // that intentionally import uninstalled packages and use a local @/* alias).
-  "files": [],
-  "exclude": ["sample-project", "node_modules", "**/dist", "**/build", "docs"]
-}

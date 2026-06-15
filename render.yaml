@@ -5,7 +5,9 @@ services:
     name: genflow
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    # --include=dev is required: NODE_ENV=production (below) makes npm skip
+    # devDependencies otherwise, and the build needs vite/typescript/tsx.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

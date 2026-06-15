@@ -228,12 +228,32 @@ npm run typecheck   # kiểm tra kiểu cho analyzer
   PNG export là ảnh canvas chính xác.
 - Thêm ngôn ngữ khác (Python/Go) = viết analyzer mới xuất **đúng schema JSON** — web không cần đổi.
 
+## App Desktop (Electron · Mac + Windows)
+
+GenFlow có bản desktop đóng gói bằng Electron: **UI nạp từ file local** (không qua URL/server), analyzer
+chạy thẳng trong app, và **tự phân tích lại realtime** khi code thay đổi.
+
+- **Chạy dev:** `npm run desktop` (build web + main rồi mở Electron).
+- **Đóng gói:** `npm run desktop:dist` → tạo installer trong `desktop/release/` (Win: `.exe` nsis;
+  Mac: `.dmg`/`.zip`; Linux: AppImage).
+  > ⚠️ `.dmg` cho Mac **chỉ build được trên macOS**. Dùng GitHub Actions
+  > ([.github/workflows/desktop-release.yml](.github/workflows/desktop-release.yml)) để build cả
+  > Mac + Win cùng lúc (push tag `v0.0.1` hoặc chạy workflow thủ công).
+
+**Cách dùng:** mở app → **Open folder** (hộp thoại native) → graph hiện ngay. Bật **Watch** để theo dõi:
+mỗi lần lưu file, app gộp ~400ms rồi phân tích lại và cập nhật map — node mới hiện ra, node xoá biến
+mất, **giữ nguyên vị trí** node cũ.
+
+**Kiến trúc:** renderer (React) ↔ main process qua **IPC** (`contextBridge`), không network. Analyzer
+chạy trong **worker thread** để UI luôn mượt; `chokidar` theo dõi thay đổi; ts-morph Project giữ ấm
+giữa các lần phân tích nên re-analyze nhanh.
+
 ## Deploy (Node service)
 
 GenFlow là **full-stack**: một Node service phục vụ cả `/api` lẫn web UI (cùng origin). Ở
 production, server tự bind `0.0.0.0` và phục vụ `web/dist`.
 
-- **Build command:** `npm install && npm run build`
+- **Build command:** `npm install --include=dev && npm run build` (`--include=dev` ensures vite/tsx/typescript are installed even when `NODE_ENV=production`)
 - **Start command:** `npm start` (chạy analyzer server, phục vụ API + SPA)
 - Platform tự set `PORT` → server đọc `process.env.PORT`.
 
@@ -474,12 +494,32 @@ npm run typecheck   # type-check the analyzer
 - Adding another language (Python/Go) means writing a new analyzer that emits the same **JSON
   schema** — the web app needs no changes.
 
+## Desktop app (Electron · Mac + Windows)
+
+GenFlow ships as an Electron desktop app: the **UI loads from local files** (no URL/server), the
+analyzer runs in-process, and it **re-analyzes in realtime** as your code changes.
+
+- **Run (dev):** `npm run desktop` (builds web + main, then opens Electron).
+- **Package:** `npm run desktop:dist` → installers in `desktop/release/` (Win: `.exe` nsis;
+  Mac: `.dmg`/`.zip`; Linux: AppImage).
+  > ⚠️ A Mac `.dmg` **can only be built on macOS**. Use the GitHub Actions workflow
+  > ([.github/workflows/desktop-release.yml](.github/workflows/desktop-release.yml)) to build both
+  > Mac + Win (push a `v0.0.1` tag, or run it manually).
+
+**Usage:** open the app → **Open folder** (native dialog) → the graph appears. Toggle **Watch** to
+track changes: on each save the app debounces ~400ms, re-analyzes, and updates the map — new nodes
+appear, deleted ones vanish, and existing node **positions are preserved**.
+
+**Architecture:** the renderer (React) talks to the main process over **IPC** (`contextBridge`), no
+network. The analyzer runs in a **worker thread** to keep the UI smooth; `chokidar` watches changes;
+the ts-morph Project stays warm between analyses so re-analysis is fast.
+
 ## Deploy (Node service)
 
 GenFlow is **full-stack**: one Node service serves both `/api` and the web UI (same origin). In
 production the server binds `0.0.0.0` and serves `web/dist`.
 
-- **Build command:** `npm install && npm run build`
+- **Build command:** `npm install --include=dev && npm run build` (`--include=dev` ensures vite/tsx/typescript are installed even when `NODE_ENV=production`)
 - **Start command:** `npm start` (runs the analyzer server, serving API + SPA)
 - The platform sets `PORT` → the server reads `process.env.PORT`.
 

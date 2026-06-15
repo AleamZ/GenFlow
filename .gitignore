@@ -9,3 +9,6 @@ coverage/
 graph.json
 web/dist/
 analyzer/dist/
+desktop/dist-main/
+desktop/dist-renderer/
+desktop/release/

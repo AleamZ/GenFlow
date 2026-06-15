@@ -1,6 +1,6 @@
 {
   "name": "@genflow/analyzer",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "AST-based dependency analyzer (ts-morph) + CLI + Fastify server for GenFlow.",

@@ -1,0 +1,29 @@
+{
+  "name": "@genflow/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "description": "GenFlow desktop (Electron) — local-file UI + in-process analyzer with realtime file watching.",
+  "author": "GenFlow",
+  "main": "dist-main/index.cjs",
+  "scripts": {
+    "build:renderer": "npm run build -w @genflow/web",
+    "build:main": "node build.mjs",
+    "build": "npm run build:renderer && npm run build:main",
+    "start": "electron .",
+    "dev": "npm run build && electron .",
+    "typecheck": "tsc --noEmit",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "chokidar": "^4.0.1",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.2",
+    "fast-glob": "^3.3.2",
+    "ts-morph": "^24.0.0",
+    "typescript": "^5.7.2"
+  }
+}

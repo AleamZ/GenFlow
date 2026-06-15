@@ -75,3 +75,38 @@ export function createProjectContext(root: string, files: ScannedFile[]): Projec
 
   return { project, compilerOptions, fileKeyToRel, moduleResolutionCache, root };
 }
+
+/**
+ * Sync an existing project's source files to a fresh scan: remove deleted files,
+ * add new ones, and reload changed ones from disk. Reuses the parse cache so
+ * re-analysis while watching stays fast.
+ */
+export function syncProjectFiles(
+  ctx: ProjectContext,
+  files: ScannedFile[],
+  changedAbsPaths: string[] = [],
+): void {
+  const newKeys = new Set(files.map((f) => fsKey(f.absPath)));
+  const changedKeys = new Set(changedAbsPaths.map(fsKey));
+
+  // Remove deleted files; refresh changed ones.
+  for (const sf of [...ctx.project.getSourceFiles()]) {
+    const key = fsKey(sf.getFilePath());
+    if (!ctx.fileKeyToRel.has(key)) continue; // not one of our scanned files
+    if (!newKeys.has(key)) {
+      ctx.project.removeSourceFile(sf);
+      ctx.fileKeyToRel.delete(key);
+    } else if (changedKeys.has(key)) {
+      sf.refreshFromFileSystemSync();
+    }
+  }
+
+  // Add newly created files.
+  for (const f of files) {
+    const key = fsKey(f.absPath);
+    if (!ctx.fileKeyToRel.has(key)) {
+      const sf = ctx.project.addSourceFileAtPathIfExists(f.absPath);
+      if (sf) ctx.fileKeyToRel.set(key, f.relPath);
+    }
+  }
+}

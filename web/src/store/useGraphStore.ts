@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Filters, GraphJSON, NodeType, Rule, ViewMode } from "../types";
 import { fetchGraph, uploadZip, type GraphRequest } from "../api";
+import { bridge } from "../platform";
 
 const RULES_KEY = "genflow.rules.v1";
 
@@ -45,8 +46,20 @@ export interface GraphState {
   highlightCircular: boolean;
   functionScopeFile: string | null;
 
+  /** Desktop: file watcher active. */
+  watching: boolean;
+  /** Desktop: a live re-analysis is currently running. */
+  analyzing: boolean;
+
   loadGraph: (req?: GraphRequest, label?: string) => Promise<void>;
   loadUpload: (file: File) => Promise<void>;
+  /** Desktop: open a native folder picker, analyze it, and start watching. */
+  openFolder: () => Promise<void>;
+  /** Desktop: start/stop the file watcher for the current root. */
+  toggleWatch: () => Promise<void>;
+  /** Desktop: apply a live graph update without losing selection/view. */
+  applyLiveGraph: (graph: GraphJSON) => void;
+  setAnalyzing: (on: boolean) => void;
 
   setViewMode: (mode: ViewMode) => void;
   setSelected: (id: string | null) => void;
@@ -79,6 +92,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   showClusters: false,
   highlightCircular: true,
   functionScopeFile: null,
+  watching: false,
+  analyzing: false,
 
   loadGraph: async (req = {}, label) => {
     set({ loading: true, error: null });
@@ -113,6 +128,39 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       set({ loading: false, error: err instanceof Error ? err.message : String(err) });
     }
   },
+
+  openFolder: async () => {
+    if (!bridge) return;
+    const folder = await bridge.openFolder();
+    if (!folder) return;
+    await get().loadGraph({ path: folder }, folder);
+    if (!get().error) {
+      await bridge.startWatch(folder);
+      set({ watching: true });
+    }
+  },
+
+  toggleWatch: async () => {
+    if (!bridge) return;
+    const { watching, graph } = get();
+    if (watching) {
+      await bridge.stopWatch();
+      set({ watching: false });
+    } else if (graph) {
+      await bridge.startWatch(graph.root);
+      set({ watching: true });
+    }
+  },
+
+  applyLiveGraph: (graph) =>
+    set((s) => ({
+      graph,
+      sourceRoot: graph.root || s.sourceRoot,
+      analyzing: false,
+      // keep selectedId, viewMode, filters, rules, functionScopeFile untouched
+    })),
+
+  setAnalyzing: (on) => set({ analyzing: on }),
 
   setViewMode: (mode) => {
     // When switching into function view, scope to the selected file if any.

@@ -1,0 +1,43 @@
+name: Desktop Release
+
+# Builds GenFlow desktop installers for macOS + Windows.
+# Trigger by pushing a tag like v0.0.1, or run manually.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build installers
+        run: npm run dist -w @genflow/desktop
+        env:
+          # electron-builder: don't try to code-sign without certs (CI demo build).
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: genflow-${{ matrix.os }}
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.exe
+            desktop/release/*.AppImage
+          if-no-files-found: ignore
