@@ -1,3 +1,6 @@
+// @ts-nocheck — demo fixture only (imports the uninstalled "axios" package on
+// purpose). Analyzed via sample-project's own tsconfig; this directive just stops a
+// repo-wide `tsc` (e.g. on a deploy host) from failing on this sample file.
 // Binance service. Imports ../bot, closing the bot <-> binance cycle.
 import axios from "axios";
 import { log } from "../utils/logger";

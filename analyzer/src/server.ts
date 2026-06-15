@@ -14,8 +14,28 @@ import { DEFAULT_ANALYZE_OPTIONS, type AnalyzeOptions, type GraphJSON } from "./
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SAMPLE_PROJECT = path.resolve(here, "../../sample-project");
+const WEB_DIST = path.resolve(here, "../../web/dist");
 const PORT = Number(process.env.PORT ?? 5174);
-const HOST = process.env.HOST ?? "127.0.0.1";
+// Bind to all interfaces when deployed (PORT/NODE_ENV set by the platform); stay
+// local-only during development to keep your source private.
+const HOST =
+  process.env.HOST ??
+  (process.env.NODE_ENV === "production" || process.env.PORT ? "0.0.0.0" : "127.0.0.1");
+
+const STATIC_MIME: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".map": "application/json",
+};
 
 /** Roots we are allowed to read files from (analyzed local dirs + uploaded zips). */
 const allowedRoots = new Set<string>();
@@ -152,10 +172,32 @@ async function main(): Promise<void> {
     }
   });
 
+  // In production, serve the built web app from the same origin as the API,
+  // so the SPA's relative /api/* calls work without a dev proxy.
+  if (fs.existsSync(path.join(WEB_DIST, "index.html"))) {
+    app.get("/*", async (req, reply) => {
+      const rel = (req.params as Record<string, string>)["*"] ?? "";
+      const safeRel = path.normalize(rel).replace(/^(\.\.[/\\])+/, "").replace(/^[/\\]+/, "");
+      let filePath = path.join(WEB_DIST, safeRel);
+      if (
+        !filePath.startsWith(WEB_DIST) ||
+        !fs.existsSync(filePath) ||
+        !fs.statSync(filePath).isFile()
+      ) {
+        filePath = path.join(WEB_DIST, "index.html"); // SPA fallback
+      }
+      reply.type(STATIC_MIME[path.extname(filePath).toLowerCase()] ?? "application/octet-stream");
+      return fs.createReadStream(filePath);
+    });
+  }
+
   await app.listen({ port: PORT, host: HOST });
   // eslint-disable-next-line no-console
   console.log(`GenFlow analyzer API → http://${HOST}:${PORT}`);
   console.log(`Sample project: ${SAMPLE_PROJECT}`);
+  if (fs.existsSync(path.join(WEB_DIST, "index.html"))) {
+    console.log(`Serving web UI from ${WEB_DIST}`);
+  }
 }
 
 main().catch((err) => {

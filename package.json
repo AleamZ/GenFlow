@@ -14,6 +14,7 @@
     "analyze": "npm run analyze -w analyzer --",
     "server": "npm run server -w analyzer",
     "build": "npm run build -w web",
+    "start": "npm run start -w analyzer",
     "test": "npm run test -w analyzer",
     "typecheck": "npm run typecheck -w analyzer"
   },

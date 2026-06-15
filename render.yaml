@@ -1,0 +1,14 @@
+# Render.com blueprint — deploy GenFlow as a single Node web service
+# (serves the API + the built web UI from the same origin).
+services:
+  - type: web
+    name: genflow
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render injects PORT automatically; the server reads process.env.PORT.

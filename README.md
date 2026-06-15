@@ -228,6 +228,25 @@ npm run typecheck   # kiểm tra kiểu cho analyzer
   PNG export là ảnh canvas chính xác.
 - Thêm ngôn ngữ khác (Python/Go) = viết analyzer mới xuất **đúng schema JSON** — web không cần đổi.
 
+## Deploy (Node service)
+
+GenFlow là **full-stack**: một Node service phục vụ cả `/api` lẫn web UI (cùng origin). Ở
+production, server tự bind `0.0.0.0` và phục vụ `web/dist`.
+
+- **Build command:** `npm install && npm run build`
+- **Start command:** `npm start` (chạy analyzer server, phục vụ API + SPA)
+- Platform tự set `PORT` → server đọc `process.env.PORT`.
+
+Config sẵn kèm theo:
+- **Render** → dùng [`render.yaml`](render.yaml) (Blueprint, đã khai sẵn build/start + healthcheck).
+- **Railway / Heroku-style** → [`Procfile`](Procfile) (`web: npm start`) + build script.
+- **Fly.io / VPS / container** → [`Dockerfile`](Dockerfile): `docker build -t genflow . && docker run -p 5174:5174 genflow`.
+
+> ⚠️ Hãy khai **build command tường minh** như trên để platform dùng đúng build (đã scoped) —
+> tránh việc nó tự chạy `tsc` toàn repo rồi fail ở `sample-project/` (đó là nguyên nhân lỗi deploy).
+> ⚠️ Bản deploy **public** có thể đọc filesystem của server qua `/api/graph?path=`. Chỉ deploy
+> nội bộ / sau auth.
+
 ## Công nghệ
 
 `ts-morph` · `fastify` · `commander` · `vitest` · React · Vite · TypeScript · Tailwind ·
@@ -455,8 +474,26 @@ npm run typecheck   # type-check the analyzer
 - Adding another language (Python/Go) means writing a new analyzer that emits the same **JSON
   schema** — the web app needs no changes.
 
+## Deploy (Node service)
+
+GenFlow is **full-stack**: one Node service serves both `/api` and the web UI (same origin). In
+production the server binds `0.0.0.0` and serves `web/dist`.
+
+- **Build command:** `npm install && npm run build`
+- **Start command:** `npm start` (runs the analyzer server, serving API + SPA)
+- The platform sets `PORT` → the server reads `process.env.PORT`.
+
+Bundled configs:
+- **Render** → use [`render.yaml`](render.yaml) (Blueprint; build/start + healthcheck preconfigured).
+- **Railway / Heroku-style** → [`Procfile`](Procfile) (`web: npm start`) + the build script.
+- **Fly.io / VPS / container** → [`Dockerfile`](Dockerfile): `docker build -t genflow . && docker run -p 5174:5174 genflow`.
+
+> ⚠️ Set the **build command explicitly** as above so the platform uses the scoped build —
+> otherwise it may run a repo-wide `tsc` and fail on `sample-project/` (the cause of the deploy error).
+> ⚠️ A **public** deployment can read the server's filesystem via `/api/graph?path=`. Deploy
+> internally / behind auth only.
+
 ## Tech
 
 `ts-morph` · `fastify` · `commander` · `vitest` · React · Vite · TypeScript · Tailwind ·
 `react-force-graph-2d` · `zustand` · `lucide-react`
-# GenFlow
