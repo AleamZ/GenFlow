@@ -18,6 +18,8 @@
     "start": "npm run start -w analyzer",
     "desktop": "npm run dev -w @genflow/desktop",
     "desktop:dist": "npm run dist -w @genflow/desktop",
+    "desktop:dist:mac": "npm run dist:mac -w @genflow/desktop",
+    "desktop:dist:win": "npm run dist:win -w @genflow/desktop",
     "test": "npm run test -w analyzer",
     "typecheck": "npm run typecheck -w analyzer && npm run typecheck -w web"
   },
