@@ -1,0 +1,26 @@
+{
+  "name": "genflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code Dependency Visualizer — analyze a JS/TS project and render an interactive force-directed dependency graph.",
+  "workspaces": [
+    "analyzer",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n analyzer,web -c blue,green \"npm:dev:analyzer\" \"npm:dev:web\"",
+    "dev:analyzer": "npm run server -w analyzer",
+    "dev:web": "npm run dev -w web",
+    "analyze": "npm run analyze -w analyzer --",
+    "server": "npm run server -w analyzer",
+    "build": "npm run build -w web",
+    "test": "npm run test -w analyzer",
+    "typecheck": "npm run typecheck -w analyzer"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
