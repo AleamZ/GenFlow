@@ -12,8 +12,8 @@
     "start": "electron .",
     "dev": "npm run build && electron .",
     "typecheck": "tsc --noEmit",
-    "dist": "npm run build && electron-builder",
-    "dist:win": "npm run build && electron-builder --win",
+    "dist": "npm run build && node scripts/prepare-wincodesign.mjs && electron-builder",
+    "dist:win": "npm run build && node scripts/prepare-wincodesign.mjs && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac"
   },
   "devDependencies": {

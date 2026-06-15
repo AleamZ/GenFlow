@@ -18,9 +18,12 @@ mac:
     - zip
   artifactName: ${productName}-${version}-${arch}.${ext}
 win:
+  # `zip` needs no code-signing tooling, so it builds without Administrator /
+  # Developer Mode on Windows (nsis/winCodeSign requires symlink privilege).
+  # CI overrides this to also build the nsis installer (see desktop-release.yml).
   target:
-    - nsis
-  artifactName: ${productName}-Setup-${version}.${ext}
+    - zip
+  artifactName: ${productName}-${version}-win-${arch}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

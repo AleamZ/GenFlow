@@ -234,9 +234,13 @@ GenFlow có bản desktop đóng gói bằng Electron: **UI nạp từ file loca
 chạy thẳng trong app, và **tự phân tích lại realtime** khi code thay đổi.
 
 - **Chạy dev:** `npm run desktop` (build web + main rồi mở Electron).
-- **Đóng gói:** `npm run desktop:dist` → tạo installer trong `desktop/release/` (Win: `.exe` nsis;
-  Mac: `.dmg`/`.zip`; Linux: AppImage).
-  > ⚠️ `.dmg` cho Mac **chỉ build được trên macOS**. Dùng GitHub Actions
+- **Đóng gói:** `npm run desktop:dist` → ra `desktop/release/` (Win: `GenFlow-<ver>-win-x64.zip`
+  → giải nén rồi chạy `GenFlow.exe`; Mac: `.dmg`/`.zip`; Linux: AppImage).
+  > ℹ️ Trên Windows, electron-builder cần giải nén tool `winCodeSign` có chứa symlink — vốn đòi
+  > quyền Admin/Developer Mode. GenFlow tự xử lý qua [prepare-wincodesign.mjs](desktop/scripts/prepare-wincodesign.mjs)
+  > (chạy trước khi build, bỏ phần `darwin`) nên **build được mà không cần admin**.
+  > ⚠️ Đóng app GenFlow đang chạy **trước khi build lại** (tránh khóa file `*.dll`).
+  > ⚠️ `.dmg` cho Mac **chỉ build trên macOS**. Dùng GitHub Actions
   > ([.github/workflows/desktop-release.yml](.github/workflows/desktop-release.yml)) để build cả
   > Mac + Win cùng lúc (push tag `v0.0.1` hoặc chạy workflow thủ công).
 
@@ -500,8 +504,13 @@ GenFlow ships as an Electron desktop app: the **UI loads from local files** (no 
 analyzer runs in-process, and it **re-analyzes in realtime** as your code changes.
 
 - **Run (dev):** `npm run desktop` (builds web + main, then opens Electron).
-- **Package:** `npm run desktop:dist` → installers in `desktop/release/` (Win: `.exe` nsis;
-  Mac: `.dmg`/`.zip`; Linux: AppImage).
+- **Package:** `npm run desktop:dist` → `desktop/release/` (Win: `GenFlow-<ver>-win-x64.zip` —
+  unzip and run `GenFlow.exe`; Mac: `.dmg`/`.zip`; Linux: AppImage).
+  > ℹ️ On Windows, electron-builder must extract its `winCodeSign` tool, which contains symlinks
+  > that normally require Admin/Developer Mode. GenFlow handles this automatically via
+  > [prepare-wincodesign.mjs](desktop/scripts/prepare-wincodesign.mjs) (a prebuild step that extracts
+  > everything except `darwin/`), so **the build works without admin**.
+  > ⚠️ Close any running GenFlow app **before rebuilding** (avoids locked `*.dll`).
   > ⚠️ A Mac `.dmg` **can only be built on macOS**. Use the GitHub Actions workflow
   > ([.github/workflows/desktop-release.yml](.github/workflows/desktop-release.yml)) to build both
   > Mac + Win (push a `v0.0.1` tag, or run it manually).
